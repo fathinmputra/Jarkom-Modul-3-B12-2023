@@ -667,3 +667,158 @@ subnet 192.184.4.0 netmask 255.255.255.0 {
 
 **Keterangan :**
 Pada bagian `default-lease-time` diisi dengan `720` (detik) atau  sama dengan 12 menit, yang merupakan lama waktu DHCP Sever meminjam alamat IP kepada client yang memlaui Switch4. Sedangakan, pada bagian `max-lease-time` diisi dengan `5760` (detik) atau sam dengan 96 menit yang merupakan waktu maksimal dialokasikan untuk peminjaman alamat IP.
+
+
+## NO. 6
+Berjalannya waktu, petualang diminta untuk melakukan deployment.
+### 1. Pada masing-masing worker PHP, lakukan konfigurasi virtual host untuk website berikut dengan menggunakan php 7.3. (6)
+#### Penjelasan : 
+
+**Lugner :**
+Buat `script.sh` pada root berisi :
+```
+cp resolv.conf1 /etc/resolv.conf
+
+apt-get update 
+apt-get install nginx -y
+apt-get install php -y
+apt-get install php php-fpm
+apt-get install htop -y
+
+cp index.php /var/www/html/index.php
+cp info.php /var/www/html/info.php
+
+mkdir /var/www/html/css
+mkdir /var/www/html/js
+
+cp style.css /var/www/html/css/style.css
+cp script.js /var/www/html/js/script.js
+
+cp default /etc/nginx/sites-available/default
+
+cp resolv.conf2 /etc/resolv.conf
+
+service nginx start
+service php7.3-fpm start
+
+service nginx restart
+service php7.3-fpm restart
+```
+Kemudian `bash script.sh` tersebut.
+
+Sehingga, 
+- Isi dari `resolv.conf1`, yaitu `nameserver 192.168.122.1` yang akan di copy ke `/etc/resolv.conf`.
+- Isi dari `resolv.conf2`, yaitu `nameserver 192.184.1.3` yang akan di copy ke `/etc/resolv.conf`.
+  
+- Isi dari `/var/www/html/index.php`, `/var/www/html/info.php`, `/var/www/html/css/style.css`, dan `/var/www/html/js/script.js` didapatkan dari `https://drive.google.com/file/d/1ViSkRq7SmwZgdK64eRbr5Fm1EGCTPrU1/view?usp=sharing` yang ada pada soal. 
+
+- Isi dari `/etc/nginx/sites-available/default` :
+```
+server {
+        listen 80;
+	root /var/www/html;
+        index index.html index.htm index.php index.nginx-debian.html;
+
+        server_name granz.channel.b12.com;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }
+
+	location ~ \.php$ {
+                include snippets/fastcgi-php.conf;
+                fastcgi_pass unix:/run/php/php7.3-fpm.sock;
+        }
+
+	location /app1/ {
+        # Lugner
+        proxy_bind 192.184.3.1;
+        proxy_pass http://192.184.3.1/index.php;
+	}
+
+	location /app2/ {
+        # Linie
+        proxy_bind 192.184.3.1;
+        proxy_pass http://192.184.3.2/index.php;
+	}
+
+	location /app3/ {
+        # Lawine
+        proxy_bind 192.184.3.1;
+        proxy_pass http://192.184.3.3/index.php;
+	}
+}
+```
+
+**Linie dan Lewine:**
+Buat `script.sh` pada root berisi :
+```
+cp resolv.conf1 /etc/resolv.conf
+
+apt-get update 
+apt-get install nginx -y
+apt-get install php -y
+apt-get install php php-fpm
+apt-get install htop -y
+
+cp index.php /var/www/html/index.php
+cp info.php /var/www/html/info.php
+
+mkdir /var/www/html/css
+mkdir /var/www/html/js
+
+cp style.css /var/www/html/css/style.css
+cp script.js /var/www/html/js/script.js
+
+cp default /etc/nginx/sites-available/default
+
+cp resolv.conf2 /etc/resolv.conf
+
+service nginx start
+service php7.3-fpm start
+
+service nginx restart
+service php7.3-fpm restart
+```
+Kemudian `bash script.sh` tersebut.
+
+Sehingga, 
+- Isi dari `resolv.conf1`, yaitu `nameserver 192.168.122.1` yang akan di copy ke `/etc/resolv.conf`.
+- Isi dari `resolv.conf2`, yaitu `nameserver 192.184.1.3` yang akan di copy ke `/etc/resolv.conf`.
+  
+- Isi dari `/var/www/html/index.php`, `/var/www/html/info.php`, `/var/www/html/css/style.css`, dan `/var/www/html/js/script.js` didapatkan dari `https://drive.google.com/file/d/1ViSkRq7SmwZgdK64eRbr5Fm1EGCTPrU1/view?usp=sharing` yang ada pada soal. 
+
+- Isi dari `/etc/nginx/sites-available/default` :
+```
+server {
+        listen 80;
+	root /var/www/html;
+        index index.html index.htm index.php index.nginx-debian.html;
+
+        server_name granz.channel.b12.com;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }
+
+	location ~ \.php$ {
+                include snippets/fastcgi-php.conf;
+                fastcgi_pass unix:/run/php/php7.3-fpm.sock;
+        }
+}
+```
+
+**Screenshot Hasil :**
+Testing pada Client Revolte :
+
+ lynx granz.channel.b12.com/app1
+
+<img width="408" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/f038fbb1-ba58-4373-9fba-97f9234f52a5">
+
+ lynx granz.channel.b12.com/app2
+ 
+<img width="412" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/8841864b-4f5a-4f95-bc9f-e1da6975e957">
+
+ lynx granz.channel.b12.com/app3
+ 
+<img width="407" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/9bd0f882-5b0c-40bb-9608-b47575adebbf">
