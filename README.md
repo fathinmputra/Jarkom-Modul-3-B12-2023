@@ -1013,7 +1013,339 @@ Mengakses Website Lawine :
 Keterangan : Website Lawine akan menerima request terbanyak dari client dibandingkan Website Linie dan Website Lugner, karena Lawine memiliki weight paling besar (weight = 4). Server yang memiliki weight paling besar akan dijadikan prioritas ketika menerima request dari client
 
 
+## NO. 8
+### 3. Karena diminta untuk menuliskan grimoire, buatlah analisis hasil testing dengan 200 request dan 10 request/second masing-masing algoritma Load Balancer dengan ketentuan sebagai berikut:
+- a. Nama Algoritma Load Balancer
+- b. Report hasil testing pada Apache Benchmark
+- c. Grafik request per second untuk masing masing algoritma. 
+- d. Analisis (8)
+  
+#### Penjelasan : 
+Kemi menggunakan 5 Algoritma Load Balancer yang disimpan pada Eisen (Load Balancer) sebagai berikut :
+**1. Round Robin**
+```
+#Default menggunakan Round Robin
+upstream backend  {
+server 192.184.3.1; #IP Lugner
+server 192.184.3.2; #IP Linie
+server 192.184.3.3; #IP Lawine
+}
+
+server {
+listen 80;
+server_name granz.channel.b12.com;
+
+        location / {
+                proxy_pass http://backend;
+                proxy_set_header    X-Real-IP $remote_addr;
+                proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header    Host $http_host;
+        }
+
+error_log /var/log/nginx/lb_error.log;
+access_log /var/log/nginx/lb_access.log;
+}
+```
+
+**2. Weighted Round Robin**
+```
+#menggunakan Weighted Round Robin
+upstream backend  {
+server 192.184.3.1 weight=4; #IP Lugner
+server 192.184.3.2 weight=2; #IP Linie
+server 192.184.3.3 weight=1; #IP Lawine
+}
+
+server {
+listen 80;
+server_name granz.channel.b12.com;
+
+        location / {
+                proxy_pass http://backend;
+                proxy_set_header    X-Real-IP $remote_addr;
+                proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header    Host $http_host;
+        }
+
+error_log /var/log/nginx/lb_error.log;
+access_log /var/log/nginx/lb_access.log;
+}
+```
+
+**3. Least Connection**
+```
+#menggunakan Least Connection
+upstream backend  {
+least_conn;
+server 192.184.3.1; #IP Lugner
+server 192.184.3.2; #IP Linie
+server 192.184.3.3; #IP Lawine
+}
+
+server {
+listen 80;
+server_name granz.channel.b12.com;
+
+        location / {
+                proxy_pass http://backend;
+                proxy_set_header    X-Real-IP $remote_addr;
+                proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header    Host $http_host;
+        }
+
+error_log /var/log/nginx/lb_error.log;
+access_log /var/log/nginx/lb_access.log;
+}
+```
+
+**4. IP Hash**
+```
+#menggunakan IP Hash
+upstream backend  {
+ip_hash;
+server 192.184.3.1; #IP Lugner
+server 192.184.3.2; #IP Linie
+server 192.184.3.3; #IP Lawine
+}
+
+server {
+listen 80;
+server_name granz.channel.b12.com;
+
+        location / {
+                proxy_pass http://backend;
+                proxy_set_header    X-Real-IP $remote_addr;
+                proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header    Host $http_host;
+        }
+
+error_log /var/log/nginx/lb_error.log;
+access_log /var/log/nginx/lb_access.log;
+}
+```
+
+**5. Generic Hash**
+```
+#menggunakan Generic Hash
+upstream backend  {
+hash $request_uri consistent;
+server 192.184.3.1; #IP Lugner
+server 192.184.3.2; #IP Linie
+server 192.184.3.3; #IP Lawine
+}
+
+server {
+listen 80;
+server_name granz.channel.b12.com;
+
+        location / {
+                proxy_pass http://backend;
+                proxy_set_header    X-Real-IP $remote_addr;
+                proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header    Host $http_host;
+        }
+
+error_log /var/log/nginx/lb_error.log;
+access_log /var/log/nginx/lb_access.log;
+}
+```
+
+Berikut Grimoire nya :
+### I. Hasil Testing
+**a. Algoritma Round Robin (734,77 req/sec)**
+
+<img width="329" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/e76d8794-5f39-431a-ab0f-6802c4feff4a">
+
+<img width="1048" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/82043e8f-09d0-40ac-a409-78968015b4e8">
+
+**b. Algoritma Weighted Round Robin (773,37 req/sec)**
+
+<img width="389" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/9fdf42f8-16a9-460e-8033-b6a02d231e6c">
+
+<img width="853" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/5ac64251-e4fe-43df-9fa1-b5a5d8e012c5">
+
+**c. Algoritma Least Connection (764,74 req/sec)**
+
+<img width="373" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/ff5e1ff7-25ff-41a4-a41f-e6a58d96cf3e">
+
+<img width="814" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/b95b6c1f-ebf1-42db-bf38-1ec09ae6d926">
+
+**d. IP Hash (808,64 req/sec)**
+
+<img width="434" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/670704e8-11ab-4f83-a7fc-761c5f857a4e">
+
+<img width="816" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/407be76c-0898-4cd6-8241-f99c137b6496">
+
+**e. Generic Hash (806,96 req/sec)**
+
+<img width="444" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/4cf3fe8b-efb3-42d2-ae83-80805abeaaec">
 
 
+<img width="863" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/d00bb649-5a8a-409a-9512-1a55cf9a2a88">
 
+### II. Grafik (Request per second untuk tiap Algo)
+- x= nama algo
+- y= waktu
+
+<img width="264" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/08d9ab8d-bd90-4c88-93c6-ae780c025eef">
+
+<img width="420" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/494bd481-7a5f-42ee-962d-8ef2623d2eb3">
+
+### Analisis:
+a. Algoritma Mana yang Paling Baik?
+- Berdasarkan hasil testing, algoritma terbaik adalah IP Hash dengan 808.64 Request/second.
+
+b. Alasan Mengapa IP Hash Paling Baik:
+   - Cara Kerja IP Hash:
+IP Hash menggunakan alamat IP klien untuk mengarahkan permintaan ke server tertentu. Dengan kata lain, setiap IP klien akan selalu diarahkan ke server yang sama selama IP klien tidak berubah.
+   - Keunggulan IP Hash
+IP Hash dapat bermanfaat dalam konteks di mana konsistensi sesi antara klien dan server backend diperlukan. Dengan mengaitkan klien ke server tertentu menggunakan alamat IP, keadaan sesi dapat dijaga, menghindari potensi masalah yang terkait dengan perpindahan sesi antar server.
+   - Optimasi Load Distribution:
+Dalam konteks tes ini, IP Hash dapat memberikan distribusi beban yang cukup merata, yang tercermin dalam jumlah request per second yang tinggi. Algoritma ini bekerja efisien karena mampu mempertahankan koneksi klien pada server yang sama selama alamat IP klien tidak berubah.
+
+c. Cara Kerja IP Hash agar Maksimal:
+   - Stabilitas Alamat IP Klien:
+Untuk menjaga konsistensi sesi, diperlukan stabilitas alamat IP klien. Jika alamat IP klien sering berubah, keuntungan dari penggunaan IP Hash dapat berkurang.
+
+
+## NO. 9
+### 4. Dengan menggunakan algoritma Round Robin, lakukan testing dengan menggunakan 3 worker, 2 worker, dan 1 worker sebanyak 100 request dengan 10 request/second, kemudian tambahkan grafiknya pada grimoire. (9)
+  
+#### Penjelasan : 
+
+**1 Worker (1193,73 req/seq) :**
+<img width="432" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/19f395eb-84bb-426a-8a63-9778f8873839">
+
+<img width="343" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/16eac018-514c-4973-9447-76fa1f8f7811">
+
+<img width="816" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/ad860b53-6995-43f7-8be8-a40b5c6ed633">
+
+**2 Worker (1165,99 req/seq): **
+
+<img width="567" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/98fbdf39-b5af-4721-97fb-7f81fc4f0c73">
+
+<img width="425" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/0af41869-f10c-46b8-9ae5-fdb7b134bd8d">
+
+<img width="796" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/8c720a12-2917-44ce-9626-f661604669e6">
+
+**3 Worker (1127,00 req/sec): **
+
+<img width="770" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/8caad4bf-d925-45c1-84b4-2b88643bfb73">
+
+<img width="397" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/2715ff8c-b815-4efe-b180-ff500c8b34fc">
+
+<img width="863" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/150467cb-2f55-43fb-8b44-416591920d61">
+
+**Tabel :** 
+
+<img width="263" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/8d9fdf66-ff25-4b13-992d-01affe59f956">
+
+**Grafik :** 
+
+<img width="419" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/f602a4ea-21fe-4f7b-b4c1-2a45fbb39ec8">
+
+**Analisis :**
+Berdasarkan hasil pengujian dengan menggunakan algoritma Round Robin pada jumlah worker yang berbeda, berikut adalah analisisnya:
+
+1 Worker
+-	Request/second: 1193.73
+- Dengan menggunakan hanya satu worker, aplikasi mencapai kinerja tertinggi. Hal ini menunjukkan bahwai dengan satu worker mampu menangani beban kerja dengan sangat efisien.
+
+2 Worker
+   - Request/second: 1165.99
+- Meskipun peningkatan jumlah worker menjadi dua, kinerja sedikit menurun menjadi 1165.99 request per detik. Hal ini mungkin disebabkan oleh overhead yang terkait dengan manajemen multiple worker, serta pembagian beban yang kurang optimal dalam kasus ini.
+
+3 Worker
+   - Request/second: 1127.00
+- Dengan tiga worker, kinerja turun lebih lanjut menjadi 1127.00 request per detik. Peningkatan jumlah worker tidak menghasilkan peningkatan kinerja yang signifikan, bahkan dapat menyebabkan penurunan kinerja, mungkin karena pembagian beban yang tidak optimal.
+
+**Kesimpulan :**
+
+- Pada kasus ini, penggunaan satu worker menunjukkan kinerja paling baik, mencapai tingkat request per detik tertinggi.
+- Peningkatan jumlah worker tidak selalu menghasilkan peningkatan kinerja, bahkan dapat menyebabkan penurunan, tergantung pada karakteristik aplikasi dan beban kerja.
+- Algoritma Round Robin mungkin mengalami overhead dalam manajemen multiple worker, yang dapat mempengaruhi kinerja keseluruhan.
+- Pemilihan jumlah worker perlu disesuaikan dengan karakteristik aplikasi dan sumber daya server yang tersedia.
+
+
+## NO. 10
+### 5. Selanjutnya coba tambahkan konfigurasi autentikasi di LB dengan dengan kombinasi username: “netics” dan password: “ajkyyy”, dengan yyy merupakan kode kelompok. Terakhir simpan file “htpasswd” nya di /etc/nginx/rahasisakita/ (10)
+  
+#### Penjelasan : 
+
+**Eisen :**
+Pertama-tama, buat file `no10.sh` pada root :
+```
+cp autentik-lb-granz /etc/nginx/sites-available/lb-granz
+
+mkdir /etc/nginx/rahasisakita/
+
+cp /etc/nginx/.htpasswd /etc/nginx/rahasisakita/
+
+service nginx restart
+```
+
+Kemudian, `bash no10.sh`.
+
+Saat diminta, isi `New Password:` dan `Re-type new password:` dengan `ajkb12`
+
+Sehingga,
+Isi dari `/etc/nginx/sites-available/lb-granz` :
+```
+upstream backend  {
+server 192.184.3.1; #IP Lugner
+server 192.184.3.2; #IP Linie
+server 192.184.3.3; #IP Lawine
+}
+
+server {
+listen 80;
+server_name granz.channel.b12.com;
+
+        location / {
+                proxy_pass http://backend;
+                proxy_set_header    X-Real-IP $remote_addr;
+                proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header    Host $http_host;
+
+		auth_basic "Administrator's Area";
+                auth_basic_user_file /etc/nginx/.htpasswd;
+        }
+
+        location ~ /\.ht {
+            deny all;
+        }
+
+error_log /var/log/nginx/lb_error.log;
+access_log /var/log/nginx/lb_access.log;
+}
+```
+
+Isi dari `/etc/nginx/rahasisakita/`
+```
+netics:$apr1$x51ArGS7$Nnw1kePfq6yTmwxYTG4e.1
+```
+
+Setelah itu lakukan testing pada `Revolte (Client)`.
+
+**Screenshot hasil :**
+
+**Revolte (Client) :**
+
+```
+lynx eisen.granz.channel.b12.com
+```
+
+<img width="451" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/2b92a1a5-b7fd-49cb-b976-6aa2dbe47ed5">
+
+Masukkan username `netics` :
+
+<img width="402" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/4f3528c3-b0b7-4c3d-b01e-d85d1cd6c5db">
+
+Masukkan password `ajkb12` :
+
+<img width="415" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/731e80e3-323e-4dcd-805c-adf6f876a933">
+
+Setelah memasukan username dan password yang benar, makan akan dapat mengakses website PHP :
+
+<img width="377" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/a4303b54-d89c-428f-98f0-5019c0e8dca4">
 
