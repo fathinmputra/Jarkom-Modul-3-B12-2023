@@ -808,17 +808,212 @@ server {
 }
 ```
 
+**Revolte (Client) :**
+Buat `script.sh` yang berisi :
+```
+cp resolv.conf2 /etc/resolv.conf
+apt update
+apt-get install lynx -y
+apt-get update
+apt-get install apache2-utils
+apt install less -y
+cp resolv.conf1 /etc/resolv.conf
+```
+Setelah itu, `bash script.sh`.
+Kemudian, lakukan testing pada Client Revolte.
+
 **Screenshot Hasil :**
-Testing pada Client Revolte :
 
- lynx granz.channel.b12.com/app1
+**Revolte :**
+Testing pada `Client Revolte` :
+```
+lynx granz.channel.b12.com/app1
+```
 
-<img width="408" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/f038fbb1-ba58-4373-9fba-97f9234f52a5">
+<img width="406" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/9e7b226d-f619-440d-8365-18d8991e847e">
 
- lynx granz.channel.b12.com/app2
+Keterangan : Mengakses virtual host website Lugner.
+
+
+```
+lynx granz.channel.b12.com/app2
+```
+
+<img width="408" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/f3ccbfa5-874f-4b8f-860e-6b3a482ca27a">
+
+Keterangan : Mengakses virtual host website Linie.
+
+
+```
+lynx granz.channel.b12.com/app3
+```
  
-<img width="412" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/8841864b-4f5a-4f95-bc9f-e1da6975e957">
+<img width="410" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/44393069-1873-432a-b267-f7a6c49e91cf">
 
- lynx granz.channel.b12.com/app3
- 
-<img width="407" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/9bd0f882-5b0c-40bb-9608-b47575adebbf">
+Keterangan : Mengakses virtual host website Lawine.
+
+
+
+
+## NO. 7
+Berjalannya waktu, petualang diminta untuk melakukan deployment.
+### Kepala suku dari Bredt Region memberikan resource server sebagai berikut:
+- a. Lawine, 4GB, 2vCPU, dan 80 GB SSD.
+- b. Linie, 2GB, 2vCPU, dan 50 GB SSD.
+- c. Lugner 1GB, 1vCPU, dan 25 GB SSD.
+
+aturlah agar Eisen dapat bekerja dengan maksimal, lalu lakukan testing dengan 1000 request dan 100 request/second. (7)
+
+#### Penjelasan : 
+**Worker PHP (Lugner, Linie, dan Lawine) :**
+Pertama-tama buat `script.sh` pada seluruh Worker PHP (Lugner, Linie, dan Lawine) yang berisi :
+```
+cp granz /etc/nginx/sites-available/granz
+
+mkdir /var/www/granz
+
+cp index.php /var/www/granz/index.php
+cp info.php /var/www/granz/info.php
+
+mkdir /var/www/granz/css
+mkdir /var/www/granz/js
+
+cp style.css /var/www/granz/css/style.css
+cp script.js /var/www/granz/js/script.js
+
+unlink /etc/nginx/sites-enabled/default
+
+ln -s /etc/nginx/sites-available/granz /etc/nginx/sites-enabled
+
+service nginx restart
+service php7.3-fpm restart
+```
+
+Kemudian `bash script.sh` tersebut.
+
+Sehingga, 
+- Isi dari `/etc/nginx/sites-available/granz`:
+```
+server {
+
+listen 80;
+
+root /var/www/granz;
+
+index index.php index.html index.htm;
+server_name _;
+
+location / {
+        try_files $uri $uri/ /index.php?$query_string;
+}
+
+# pass PHP scripts to FastCGI server
+location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
+}
+
+location ~ /\.ht {
+        deny all;
+}
+
+error_log /var/log/nginx/granz_error.log;
+access_log /var/log/nginx/granz_access.log;
+}
+```
+
+- Isi dari `/var/www/granz/index.php`, `/var/www/granz/info.php`, `/var/www/granz/css/style.css`, dan `/var/www/granz/js/script.js` didapatkan dari `https://drive.google.com/file/d/1ViSkRq7SmwZgdK64eRbr5Fm1EGCTPrU1/view?usp=sharing` yang ada pada soal.
+
+**Eisen (Load Balancer) :**
+Pertama-tama buat `script.sh` pada root yang berisi ;
+```
+echo nameserver 192.168.122.1 > /etc/resolv.conf
+apt-get update
+apt-get install isc-dhcp-server -y
+apt-get install bind9 -y
+apt-get install nginx -y
+apt-get install apache2-utils -y
+apt-get install htop -y
+
+cp weightedrr-lb-granz /etc/nginx/sites-available/lb-granz
+
+unlink /etc/nginx/sites-enabled/default
+
+ln -s /etc/nginx/sites-available/lb-granz /etc/nginx/sites-enabled/
+
+service nginx restart
+```
+
+Kemudian `bash script.sh` tersebut.
+
+Sehingga, 
+- Isi dari `/etc/nginx/sites-available/lb-granz`:
+```
+#menggunakan Weighted Round Robin
+upstream backend  {
+server 192.184.3.1 weight=4; #IP Lugner
+server 192.184.3.2 weight=2; #IP Linie
+server 192.184.3.3 weight=1; #IP Lawine
+}
+
+server {
+listen 80;
+server_name granz.channel.b12.com;
+
+        location / {
+                proxy_pass http://backend;
+                proxy_set_header    X-Real-IP $remote_addr;
+                proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header    Host $http_host;
+        }
+
+error_log /var/log/nginx/lb_error.log;
+access_log /var/log/nginx/lb_access.log;
+}
+```
+Keterangan : Load balancer tersebut menggunakan Algoritam Weighted Round Robin.
+
+- Kemudian  `/etc/nginx/sites-available/lb-granz` di-link (dihubungkan) pada `/etc/nginx/sites-enabled/` me-replace `/etc/nginx/sites-enabled/default`
+
+**Revolte :**
+```
+apt-get update
+apt-get install apache2-utils
+```
+Setelah itu, lakukan testing pada `Client Revolte` .
+  
+**Screenshot Hasil :**
+
+**Revolte :**
+
+```
+ab -n 1000 -c 100 -g out.data http://eisen.granz.channel.b12.com/
+```
+Berikut merupakan hasil testing dengan 1000 request dan 100 request/second :
+
+<img width="289" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/07c3daf3-b2af-42f7-a7e3-4aba738a76ac">
+
+Berikut merupakan hasil testing request Website Worker PHP menggunakan Load Balncer Algoritma Weighted Round Robin :
+```
+lynx eisen.granz.channel.b12.com
+```
+
+Mengakses Website Luggner : 
+
+<img width="406" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/9e7b226d-f619-440d-8365-18d8991e847e">
+
+Mengakses Website Linie : 
+
+<img width="408" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/f3ccbfa5-874f-4b8f-860e-6b3a482ca27a">
+
+Mengakses Website Lawine : 
+
+<img width="410" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/44393069-1873-432a-b267-f7a6c49e91cf">
+
+Keterangan : Website Lawine akan menerima request terbanyak dari client dibandingkan Website Linie dan Website Lugner, karena Lawine memiliki weight paling besar (weight = 4). Server yang memiliki weight paling besar akan dijadikan prioritas ketika menerima request dari client
+
+
+
+
+
+
