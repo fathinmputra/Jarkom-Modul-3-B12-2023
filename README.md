@@ -1,5 +1,5 @@
-![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/d1c6fea7-c744-4d94-b091-ff2bbca7cfed)![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/7b14e6c3-0cfa-4476-9859-5fff0aa15cb0)# Praktikum Jaringan Komputer
-# Modul 2
+# Praktikum Jaringan Komputer
+# Modul 3
 ### Kelompok B12
 ### Anggota :
 |            Nama           |     NRP    |
