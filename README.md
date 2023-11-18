@@ -1,4 +1,4 @@
-# Praktikum Jaringan Komputer
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/d1c6fea7-c744-4d94-b091-ff2bbca7cfed)![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/7b14e6c3-0cfa-4476-9859-5fff0aa15cb0)# Praktikum Jaringan Komputer
 # Modul 2
 ### Kelompok B12
 ### Anggota :
@@ -1349,3 +1349,560 @@ Setelah memasukan username dan password yang benar, makan akan dapat mengakses w
 
 <img width="377" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/a4303b54-d89c-428f-98f0-5019c0e8dca4">
 
+## NO. 11
+### Lalu buat untuk setiap request yang mengandung /its akan di proxy passing menuju halaman https://www.its.ac.id. (11) hint: (proxy_pass).
+
+### Penjelasan :
+
+Melakukan bash `no11.sh` pada load balancer `eisen`. Fungsi bash adalah menambahkan location baru untuk its ke lb-granz :
+```
+        location ~ /its {
+                proxy_pass  https://www.its.ac.id;
+                proxy_set_header Host www.its.ac.id;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+        }
+```
+
+Sehingga selengkapnya seperti berikut :
+```
+#menggunakan Weighted Round Robin
+upstream backend  {
+server 192.184.3.1 weight=4; #IP Lugner
+server 192.184.3.2 weight=2; #IP Linie
+server 192.184.3.3 weight=1; #IP Lawine
+}
+
+server {
+listen 80;
+server_name granz.channel.b12.com;
+
+        location / {
+                proxy_pass http://backend;
+                proxy_set_header    X-Real-IP $remote_addr;
+                proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header    Host $http_host;
+        }
+
+        location ~ /its {
+                proxy_pass  https://www.its.ac.id;
+                proxy_set_header Host www.its.ac.id;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+error_log /var/log/nginx/lb_error.log;
+access_log /var/log/nginx/lb_access.log;
+}
+```
+
+Kemudian dilakukan lynx dengan menambahkan `/its` untuk pengecekan :
+> lynx eisen.granz.channel.b12.com/its
+
+Berikut hasilnya :
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/6a61738e-b08c-46fa-a5db-31469d742c01)
+
+## No.12
+### 7.	Selanjutnya LB ini hanya boleh diakses oleh client dengan IP [Prefix IP].3.69, [Prefix IP].3.7, [Prefix IP].4.167, dan [Prefix IP].4.168. (12)
+
+### Penjelasan :
+
+### Eisen
+
+Dilakukan bash `no12.sh` pada Eisen. Isi dari no12.sh :
+```
+cp lb-granz-no12 /etc/nginx/sites-enabled/lb-granz
+service nginx restart
+```
+
+Dimana isi dari lb-granz-no12 adalah untuk menambahkan akses kepada beberapa ip pada location. 
+```
+location / {
+                allow 192.184.3.69;
+                allow 192.184.3.70;
+                allow 192.184.4.167;
+                allow 192.184.4.168;
+                deny all;
+                proxy_pass http://backend;
+        }
+```
+
+### Richter
+
+Pada client Richter, dilakukan beberapa instalasi dan perubahan konfigurasi interfacenya. Dapat dilakukan dengan `bash no12.sh` :
+```
+echo 'nameserver 192.168.122.1' > /etc/resolv.conf
+apt-get update
+apt-get install lynx -y
+apt-get install apache2-utils
+apt install less -y
+echo 'nameserver 192.184.1.3' > /etc/resolv.conf
+
+cp interfaces12 /etc/network/interfaces
+```
+
+Isi dari konfigurasi interface yang diganti adalah :
+```
+#auto eth0
+#iface eth0 inet static
+#       address 192.184.3.4
+#       netmask 255.255.255.0
+#       gateway 192.184.3.55
+
+auto eth0
+iface eth0 inet dhcp
+hwaddress ether 62:57:bb:6d:48:c8
+```
+
+### Himmel
+
+Memberi fixed address kepada client Richter. Dapat dilakukan dengan `bash no12.sh`. Isi dari bash no12.sh adalah menambahkan fixed adrress ke Richter pada `dhcpd.conf` :
+```
+host Richter {
+    hardware ethernet 62:57:bb:6d:48:c8;
+    fixed-address 192.184.3.70;
+}
+```
+
+Kemudian Restart node `Client Richter`.
+
+### Revolta
+
+Lakukan lynx pada client revolta
+>lynx eisen.granz.channel.b12.com
+
+Hasilnya :
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/510f0e79-a494-4755-92d2-c00e445e6f13)
+
+- Forbidden, karena IP nya sudah di luar rentang yang ditentukan.
+
+## No. 13
+### 1.	Semua data yang diperlukan, diatur pada Denken dan harus dapat diakses oleh Frieren, Flamme, dan Fern.
+
+### Penjelasan :
+
+### Denken
+
+Bash `script.sh`. Isi dari script.sh adalah installing mariadb-server dan kemudian membuat user, password, database, dan privilage pada databsenya. Isi dari `script.sh` :
+
+```
+echo 'nameserver 192.168.122.1' > /etc/resolv.conf
+apt-get update
+apt-get install mariadb-server -y
+service mysql start
+echo 'nameserver 192.184.1.3' > /etc/resolv.conf
+
+mysql -e "CREATE USER 'kelompokb12'@'%' IDENTIFIED BY 'passwordb12';"
+mysql -e "CREATE USER 'kelompokb12'@'localhost' IDENTIFIED BY 'passwordb12';"
+mysql -e "CREATE DATABASE dbkelompokb12;"
+mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'kelompokb12'@'%';"
+mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'kelompokb12'@'localhost';"
+mysql -e "FLUSH PRIVILEGES;"
+
+cp my.cnf /etc/mysql/my.cnf
+service mysql restart
+```
+
+Selanjutnya pada bagian terakhir script.sh, ada my.cnf, dimana akan ditambahkan sedikit konfigurasi. Isi tambahannya :
+> my.cnf
+```
+[mysqld]
+skip-networking=0
+skip-bind-address
+```
+
+### Fern, Flamme, Frieren
+
+Bash script.sh yang isinya installing mariadb client & show database Derken. Isi dari `script.sh` :
+```
+echo 'nameserver 192.168.122.1' > /etc/resolv.conf
+apt-get update
+apt-get install mariadb-client -y
+echo 'nameserver 192.184.1.3' > /etc/resolv.conf
+mariadb --host=192.184.2.2 --port=3306 --user=kelompokb12 --password=passwordb12 -e "SHOW DATABASES;"
+```
+
+Setelah selesai mejalankan, jika berhasil maka akan ditampilkan database dari `node Denken` :
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/02c0bfdf-23ae-4063-a0d9-11c63dea2665)
+
+## No. 14
+### 2.	Frieren, Flamme, dan Fern memiliki Riegel Channel sesuai dengan quest guide berikut. Jangan lupa melakukan instalasi PHP8.0 dan Composer (14)
+
+### Penjelasan :
+
+### Frieren, Flamme, dan Fern 
+
+Melakukan `bash no14.sh` pada semua worker laravel. Isi dari no14.sh :
+```
+echo 'nameserver 192.168.122.1' > /etc/resolv.conf
+wget https://getcomposer.org/download/2.0.13/composer.phar
+chmod +x composer.phar
+mv composer.phar /usr/bin/composer
+
+apt-get install git -y
+
+cd /var/www && git clone https://github.com/martuafernando/laravel-praktikum-jarkom.git
+cd /var/www/laravel-praktikum-jarkom && composer update
+
+echo 'nameserver 192.184.1.3' > /etc/resolv.conf
+
+cd /var/www/laravel-praktikum-jarkom && cp .env.example .env
+
+cp env1 /var/www/laravel-praktikum-jarkom/.env
+
+cd /var/www/laravel-praktikum-jarkom && php artisan key:generate
+cd /var/www/laravel-praktikum-jarkom && php artisan config:cache
+cd /var/www/laravel-praktikum-jarkom && php artisan migrate
+cd /var/www/laravel-praktikum-jarkom && php artisan db:seed
+cd /var/www/laravel-praktikum-jarkom && php artisan storage:link
+cd /var/www/laravel-praktikum-jarkom && php artisan jwt:secret
+cd /var/www/laravel-praktikum-jarkom && php artisan config:clear
+
+chown -R www-data.www-data /var/www/laravel-praktikum-jarkom/storage
+
+cp default /etc/nginx/sites-available/default
+
+service nginx start
+service php8.0-fpm start
+
+service nginx restart
+service php8.0-fpm restart
+```
+- Pertama, akan dilakukan instalasi composer dan git.
+- Kemudian, akan diclone repository laravel-praktikum-jarkom ke path /var/www
+- Copy .env.example dan paste penjadi .env, setelahnya akan dipindahkan beberapa konfigurasi dari env1 ke .env . Berikut perubahannya :
+> env1
+```
+DB_CONNECTION=mysql
+DB_HOST=192.184.2.2
+DB_PORT=3306
+DB_DATABASE=dbkelompokb12
+DB_USERNAME=kelompokb12
+DB_PASSWORD=passwordb12
+```
+- Selanjutnya, ada beberapa perintah yang dijalankan pada repo yang telah diclone tadi. Beberapa contohnya seperti `php artisan migrate` untuk migrasi tabel dari Laravel ke Database dan `php artisan db:seed` melakukan seed data ke database.
+- Selanjutnya adalah melakukan perubahan pada `/etc/nginx/sites-available/default`. Berikut adalah isi dari default yang telah dirubah :
+> default
+```
+server {
+
+    listen 8003;
+
+    root /var/www/laravel-praktikum-jarkom/public;
+
+    index index.php index.html index.htm;
+    server_name _;
+
+    location / {
+            try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # pass PHP scripts to FastCGI server
+    location ~ \.php$ {
+    include snippets/fastcgi-php.conf;
+    fastcgi_pass unix:/var/run/php/php8.0-fpm.sock;
+    }
+
+location ~ /\.ht {
+            deny all;
+    }
+
+    error_log /var/log/nginx/default_error.log;
+    access_log /var/log/nginx/default_access.log;
+}
+```
+> Setiap worker diberi port yang berbeda. Fern: 8001, Flamme: 8002, Frieren: 8003. Jadi, potongan di atas untuk Frieren karena listen 8003.
+- Terakhir restart nginx dan php.
+
+Setelah selesai, untuk testing dapat dilakukan lynx pada worker :
+> lynx localhost:(Port worker)
+
+Contoh testing pada `worker Frieren` :
+> lynx localhost:8003
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/e6887390-2fae-4c97-b53a-b64be1c7e855)
+
+## No. 15
+### 3.	Riegel Channel memiliki beberapa endpoint yang harus ditesting sebanyak 100 request dengan 10 request/second. Tambahkan response dan hasil testing pada grimoire. a.	POST /auth/register (15)
+
+### Penjelasan :
+
+### Sein
+
+Pada `Client Sein`. Dibuat `register.json` untuk nantinya dipakai untuk melakukan POST /auth/register. Isi dari register.json :
+```
+{
+    "username": "kelompokb12",
+    "password": "passwordb12"
+}
+```
+
+Kemudian, karena harus ditesting sebanyak 100 requests dengan 10 request/second, maka akan dilakukan pengetesan dengan menggunakan apache benchmark. Perintahnya :
+> ab -n 100 -c 10 -p register.json -T application/json http://192.184.4.1:8001/api/auth/register
+
+Hasil Testing :
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/e1bb25c5-fcde-4d0e-91be-006a3fa88cfb)
+
+
+## No. 16
+### b.	POST /auth/login (16)
+
+### Penjelasan
+
+### Sein
+
+Sama seperti register tadi, dibuat file json untuk nantinya dipakai untuk melakukan POST /auth/login. Kami diberi nama `login.json` yang isinya :
+```
+{
+    "username": "kelompokb12",
+    "password": "passwordb12"
+}
+```
+
+Kemudian, karena harus ditesting sebanyak 100 requests dengan 10 request/second, maka akan dilakukan pengetesan dengan menggunakan apache benchmark. Perintahnya :
+> ab -n 100 -c 10 -p login.json -T application/json http://192.184.4.1:8001/api/auth/login
+
+- Testing dilakukan dengan IP mengarah ke worker `Fern` yaitu `192.184.4.1` dan dengan port `8001`.
+
+Hasil Testing :
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/5ae7cfd5-e321-438b-b0a3-9bb0baced8b9)
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/dfd059f2-650c-4609-b8e5-87d7afa11e79)
+
+## No. 17
+### c.	GET /me (17)
+
+### Penjelasan :
+
+### Sein
+
+Pertama, untuk melakukan proses otentikasi atau login ke suatu sistem dengan menggunakan data yang ada dalam file JSON, perlu mengambil token loginnya terlebih dahulu. Hasil tokennya akan ditulis ke `login_output.txt`. Perintahnya :
+> curl -X POST -H "Content-Type: application/json" -d @login.json http://192.184.4.1:8001/api/auth/login > login_output.txt
+
+Setelah itu, gunakan perintah untuk membaca file login_output.txt, mengekstrak nilai dari kunci "token" dalam respons JSON menggunakan jq, dan menyimpan nilai tersebut dalam variabel shell token. Perintahnya :
+> token=$(cat login_output.txt | jq -r '.token')
+
+Dengan memasukkan token otentikasi dalam header "Authorization". Dapat dilakukan akses /me. Karena ingin dilakukan testing sebanyak 100 requests dengan 10 request/second, maka akan dilakukan pengetesan dengan menggunakan apache benchmark. Perintahnya :
+> ab -n 100 -c 10 -H "Authorization: Bearer $token" http://192.184.4.1:8001/api/me
+
+Hasil testing :
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/c6a0c53b-98ce-4635-a948-fe0cef5b61b8)
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/8c882cab-e8b2-40d5-809d-df116dd103ff)
+
+## No. 18
+### Untuk memastikan ketiganya bekerja sama secara adil untuk mengatur Riegel Channel maka implementasikan Proxy Bind pada Eisen untuk mengaitkan IP dari Frieren, Flamme, dan Fern. (18)
+
+### Penjelasan :
+
+### Eisen
+
+Agar ketiganya bekerja secara adil, disini akan diimplementasikan load balancing pada load balancer `Eisen`. 
+Untuk menjalankannya, cukup melakukan `bash no18.sh`. Isinya :
+```
+cp lb-riegel /etc/nginx/sites-available/lb-riegel
+
+ln -s /etc/nginx/sites-available/lb-riegel /etc/nginx/sites-enabled/lb-riegel
+
+unlink /etc/nginx/sites-enabled/lb-granz
+
+service nginx restart
+```
+- Copy isi dari lb-riegel ke path /etc/nginx/sites-available/. isi dari lb-riegel sendiri adalah implementasi load balancing ketiga worker laravel dan diarahkan ke website `riegel.canyon.b12.com`. Isinya :
+```
+upstream laravel {
+        server 192.184.4.1:8001;
+        server 192.184.4.2:8002;
+        server 192.184.4.3:8003;
+}
+
+server {
+        listen 80;
+        server_name riegel.canyon.b12.com;
+
+        location / {
+                proxy_pass http://laravel;
+        }
+}
+```
+- Setelah itu, akan dilakukan link /etc/nginx/sites-available/lb-riegel ke /etc/nginx/sites-enabled/lb-riegel.
+- Terakhir, unlink lb-granz karena ditakutkan bertabrakan. Kemudian restart nginx.
+
+Setelah konfigurasi, saatnya melakukan testing ke domain eisen.riegel.canyon.b12.com untuk cek apakah load balancer ke worker laravel sudah berhasil atau belum. `Note: Mengapa domainnya eisen.riegel.canyon.b12.com? karena pada DNS Master, IP utama riegel.canyon.b12.com menuju ke IP worker Fern. Jadi, jika ingin aksesnya mengarah ke IP eisen, antara mengubah IP utama di DNS Master menjadi menuju ke IP Eisen atau menggunakan domain eisen.riegel.canyon.b12.com`. Perintah testing login :
+> ab -n 100 -c 10 -p login.json -T application/json http://eisen.riegel.canyon.b12.com/api/auth/login
+
+Hasil Testing :
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/8ebaf462-279e-4562-a637-268bdc0b2735)
+
+Hasil cek log masing-masing worker untuk memastikan ketiganya bekerja secara adil :
+
+Log Fern :
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/5b7c71c8-f258-498d-a2a2-7935d6efdb2b)
+
+Log Flamme :
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/efd4b311-3c75-47f6-acb7-9f420fd6ec77)
+
+Log Frieren :
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/f2ad7f2f-b988-43af-8160-15ac61f9d22f)
+
+## No. 19
+### 5. Untuk meningkatkan performa dari Worker, coba implementasikan PHP-FPM pada Frieren, Flamme, dan Fern. Untuk testing kinerja naikkan - pm.max_children - pm.start_servers - pm.min_spare_servers - pm.max_spare_servers sebanyak tiga percobaan dan lakukan testing sebanyak 100 request dengan 10 request/second kemudian berikan hasil analisisnya pada Grimoire.(19)
+
+### Penjelasan :
+
+### Fern, Flamme, Frieren
+Pada masing masing worker, telah disediakan script `bash percobaan-0.sh` `bash percobaan-1.sh` `bash percobaan-2.sh` `bash percobaan-3.sh`. Dimana `percobaan-0` merupakan nilai default dari pm.max_children - pm.start_servers - pm.min_spare_servers - pm.max_spare_servers, `percobaan-1` adalah nilai pm.max_children - pm.start_servers - pm.min_spare_servers - pm.max_spare_servers yang sudah dinaikkan, dst. Jika ingin melakukan testing, maka perintah bash harus dijalankan di semua worker. Contoh ingin melakukan percobaan-2, maka pada semua worker perlu `bash percobaan-2.sh`.
+
+Isi dari masing masing percobaan :
+> percobaan-0 (Default)
+```
+[www]
+user = www-data
+group = www-data
+listen = /run/php/php8.0-fpm.sock
+listen.owner = www-data
+listen.group = www-data
+php_admin_value[disable_functions] = exec,passthru,shell_exec,system
+php_admin_flag[allow_url_fopen] = off
+
+; Choose how the process manager will control the number of child processes.
+
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+```
+
+> percobaan-1
+```
+[www]
+user = www-data
+group = www-data
+listen = /run/php/php8.0-fpm.sock
+listen.owner = www-data
+listen.group = www-data
+php_admin_value[disable_functions] = exec,passthru,shell_exec,system
+php_admin_flag[allow_url_fopen] = off
+
+; Choose how the process manager will control the number of child processes.
+
+pm = dynamic
+pm.max_children = 10
+pm.start_servers = 4
+pm.min_spare_servers = 2
+pm.max_spare_servers = 6
+```
+
+> percobaan-2
+```
+[www]
+user = www-data
+group = www-data
+listen = /run/php/php8.0-fpm.sock
+listen.owner = www-data
+listen.group = www-data
+php_admin_value[disable_functions] = exec,passthru,shell_exec,system
+php_admin_flag[allow_url_fopen] = off
+
+; Choose how the process manager will control the number of child processes.
+
+pm = dynamic
+pm.max_children = 15
+pm.start_servers = 6
+pm.min_spare_servers = 3
+pm.max_spare_servers = 9
+```
+
+> percobaan-3
+```
+[www]
+user = www-data
+group = www-data
+listen = /run/php/php8.0-fpm.sock
+listen.owner = www-data
+listen.group = www-data
+php_admin_value[disable_functions] = exec,passthru,shell_exec,system
+php_admin_flag[allow_url_fopen] = off
+
+; Choose how the process manager will control the number of child processes.
+
+pm = dynamic
+pm.max_children = 20
+pm.start_servers = 8
+pm.min_spare_servers = 4
+pm.max_spare_servers = 12
+```
+
+Setelah itu, masing-masing percobaan dilakukan test sebanyak 100 request dengan 10 request/second. Disini akan ditest dengan perintah login. Perintahnya :
+> ab -n 100 -c 10 -p login.json -T application/json http://eisen.riegel.canyon.b12.com/api/auth/login
+
+Hasil Testing :
+
+> percobaan-0
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/ed410d33-aebf-436a-aec3-bd786dc9c12e)
+
+> percobaan 1
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/abf0a780-bfd3-4c91-9c1e-f107665d1f32)
+
+
+> percobaan 2
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/8b707f83-a614-4c9f-8cfc-8beaf8e785b2)
+
+
+> percobaan 3
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/7d29fcb9-88c2-4655-8280-ef667b4b5a2f)
+
+## No. 20
+### 6. Nampaknya hanya menggunakan PHP-FPM tidak cukup untuk meningkatkan performa dari worker maka implementasikan Least-Conn pada Eisen. Untuk testing kinerja dari worker tersebut dilakukan sebanyak 100 request dengan 10 request/second. (20)
+
+### Penjelasan :
+
+### Eisen
+Untuk mengimplementasikan algoritma Least-Conn pada load balancer. Maka pada file lb-riegel akan ditambahkan :
+> least_conn;
+
+Implementasi lengkapnya dapat dilakukan `bash no20.sh` yang isinya :
+```
+cp leastcon-lb-riegel /etc/nginx/sites-available/lb-riegel
+
+service nginx restart
+```
+- Isi leastcon-lb-riegel :
+```
+upstream laravel {
+        least_conn;
+        server 192.184.4.1:8001;
+        server 192.184.4.2:8002;
+        server 192.184.4.3:8003;
+}
+
+server {
+        listen 80;
+        server_name riegel.canyon.b12.com;
+
+        location / {
+                proxy_pass http://laravel;
+        }
+}
+```
+- leastcon-lb-riegel merupakan implementasi algoritma Least-Conn. leastcon-lb-riegel akan dicopy untuk menggantikan algoritma sebelumnya ke /etc/nginx/sites-available/lb-riegel.
+- Setelah algoritma diganti, restart nginx.
+
+Hasil testing login dengan implementasi Least-Conn :
+
+![image](https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/133391111/542a2818-4bb6-4097-9d1b-a15db381ccc4)
