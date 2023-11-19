@@ -7,6 +7,9 @@
 | Darvin Exaudi Simanjuntak | 5025211172 |
 | Fathin Muhashibi Putra    | 5025211229 |
 
+
+File GNS3 Project : https://drive.google.com/drive/folders/1tyHcb-d85PskxoKQzFLy4nLLJLTMUQTw
+
 ## NO. 1
 Perjalanan selanjutnya akan menggunakan peta berikut:
 
