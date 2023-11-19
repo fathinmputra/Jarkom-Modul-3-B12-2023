@@ -1021,6 +1021,17 @@ Keterangan : Website Lawine akan menerima request terbanyak dari client dibandin
 - d. Analisis (8)
   
 #### Penjelasan : 
+
+Untuk testing dengan 200 request dan 10 request/second di `Revolte` :
+```
+ab -n 200 -c 10 -g out.data http://eisen.granz.channel.b12.com/
+```
+
+Masing-masing Worker PHP :
+```
+htop
+```
+
 Kemi menggunakan 5 Algoritma Load Balancer yang disimpan pada Eisen (Load Balancer) sebagai berikut :
 **1. Round Robin**
 ```
@@ -1214,13 +1225,14 @@ Untuk menjaga konsistensi sesi, diperlukan stabilitas alamat IP klien. Jika alam
 #### Penjelasan : 
 
 **1 Worker (1193,73 req/seq) :**
+
 <img width="432" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/19f395eb-84bb-426a-8a63-9778f8873839">
 
 <img width="343" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/16eac018-514c-4973-9447-76fa1f8f7811">
 
 <img width="816" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/ad860b53-6995-43f7-8be8-a40b5c6ed633">
 
-**2 Worker (1165,99 req/seq): **
+**2 Worker (1165,99 req/seq):**
 
 <img width="567" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/98fbdf39-b5af-4721-97fb-7f81fc4f0c73">
 
@@ -1228,7 +1240,7 @@ Untuk menjaga konsistensi sesi, diperlukan stabilitas alamat IP klien. Jika alam
 
 <img width="796" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/8c720a12-2917-44ce-9626-f661604669e6">
 
-**3 Worker (1127,00 req/sec): **
+**3 Worker (1127,00 req/sec):**
 
 <img width="770" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/8caad4bf-d925-45c1-84b4-2b88643bfb73">
 
@@ -1238,11 +1250,12 @@ Untuk menjaga konsistensi sesi, diperlukan stabilitas alamat IP klien. Jika alam
 
 **Tabel :** 
 
-<img width="263" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/8d9fdf66-ff25-4b13-992d-01affe59f956">
+<img width="419" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/46ccbfb5-34ce-4151-a0ad-75dd42c0217c">
 
 **Grafik :** 
 
-<img width="419" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/f602a4ea-21fe-4f7b-b4c1-2a45fbb39ec8">
+<img width="432" alt="image" src="https://github.com/fathinmputra/Jarkom-Modul-3-B12-2023/assets/103252800/92b5e19a-73f8-4506-8eaf-9ca83c02d3b2">
+
 
 **Analisis :**
 Berdasarkan hasil pengujian dengan menggunakan algoritma Round Robin pada jumlah worker yang berbeda, berikut adalah analisisnya:
